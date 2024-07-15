@@ -31,7 +31,7 @@ async function run() {
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
     
     const serviceCollection = client.db('carDoctor').collection('servicesDB');
-    const bookingCollection = client.db('carDoctor').collection('booking');
+    const bookingsCollection = client.db('carDoctor').collection('bookings');
 
     app.get('/services', async(req, res)=>{
         const result = await serviceCollection.find().toArray();
@@ -45,7 +45,7 @@ async function run() {
         res.send(result);
     })
 
-    // to get selected speecific data:
+    // to get selected data and speecific field:
     app.get('/service/:id', async(req, res)=>{
       const id = req.params.id;
       const query = {_id: new ObjectId(id)};
@@ -56,6 +56,12 @@ async function run() {
       res.send(result);
     })
 
+    // api for post a booking
+    app.post('/bookings', async(req, res)=>{
+      const order = req.body;
+      const result = await bookingsCollection.insertOne(order);
+      res.send(result);
+    })
 
 
   } finally {
