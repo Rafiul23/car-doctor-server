@@ -81,6 +81,21 @@ async function run() {
       res.send(result);
     })
 
+    // update a booking status
+    app.patch('/booking/:id', async(req, res)=>{
+      const id = req.params.id;
+      const updateStatus = req.body;
+      const filter = {_id: new ObjectId(id)};
+      const options = {upsert: true};
+      const updateDoc = {
+        $set: {
+          status: updateStatus.status
+        }
+      }
+      const result = await bookingsCollection.updateOne(filter, updateDoc, options);
+      res.send(result);
+    })
+
 
   } finally {
     // Ensures that the client will close when you finish/error
