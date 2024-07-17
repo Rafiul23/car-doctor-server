@@ -1,17 +1,21 @@
 const express = require("express");
 const cors = require("cors");
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 const app = express();
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 5000;
 
 // middleware
-app.use(cors({
-  origin: ['http://localhost:5173'],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: ["http://localhost:5173"],
+    credentials: true,
+  })
+);
 app.use(express.json());
+app.use(cookieParser());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.wlof2pa.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -37,20 +41,19 @@ async function run() {
     const serviceCollection = client.db("carDoctor").collection("servicesDB");
     const bookingsCollection = client.db("carDoctor").collection("bookings");
 
-
     // auth related api
-    app.post('/jwt', async(req, res)=>{
-       const user = req.body;
-       console.log(user);
-       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '6h'});
-       res
-       .cookie('token:', token, {
-        httpOnly: true,
-        secure: false  //for production, it should be true
-       })
-       .send({success: true});
-    })
-
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: false, //for production, it should be true
+        })
+        .send({ success: true });
+    });
 
     // service related api
     app.get("/services", async (req, res) => {
@@ -85,6 +88,9 @@ async function run() {
 
     // api for getting specific booking data by query parameter
     app.get("/bookings", async (req, res) => {
+      const token = req.cookies.token;
+      console.log(token);
+      // console.log("tik tok token: ", token);
       let query = {};
       if (req.query?.email) {
         query = { email: req.query.email };
