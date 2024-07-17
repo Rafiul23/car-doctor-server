@@ -17,6 +17,25 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+
+const verifyToken = async(req, res, next)=>{
+  const token = req.cookies?.token;
+  console.log('token in middleware:', token);
+  if(!token){
+    return res.status(401).send({message: 'Not Authorized'});
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=>{
+    if(err){
+      console.log(err);
+      res.status(401).send({message: 'Not Authorized'});
+    }
+
+      console.log('value of token in decoded', decoded);
+      req.user = decoded;
+      next();
+  })
+}
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.wlof2pa.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -87,10 +106,13 @@ async function run() {
     });
 
     // api for getting specific booking data by query parameter
-    app.get("/bookings", async (req, res) => {
-      const token = req.cookies.token;
-      console.log(token);
-      // console.log("tik tok token: ", token);
+    app.get("/bookings", verifyToken, async (req, res) => {
+      // console.log('user in the valid token', req.user);
+
+      if(req.query.email !== req.user.email){
+        return res.status(403).send({message: 'Forbidden Access'});
+      }
+
       let query = {};
       if (req.query?.email) {
         query = { email: req.query.email };
