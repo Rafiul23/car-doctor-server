@@ -74,6 +74,17 @@ async function run() {
         .send({ success: true });
     });
 
+
+    // clear token from cookie when user logged out
+    app.post('/logout', async(req, res)=>{
+      const user = req.body;
+      console.log('log out user', user);
+      res
+      .clearCookie('token', {maxAge: 0})
+      .send({success: true})
+    })
+
+
     // service related api
     app.get("/services", async (req, res) => {
       const result = await serviceCollection.find().toArray();
