@@ -17,24 +17,23 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-
-const verifyToken = async(req, res, next)=>{
+const verifyToken = async (req, res, next) => {
   const token = req.cookies?.token;
-  console.log('token in middleware:', token);
-  if(!token){
-    return res.status(401).send({message: 'Not Authorized'});
+  console.log("token in middleware:", token);
+  if (!token) {
+    return res.status(401).send({ message: "Not Authorized" });
   }
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=>{
-    if(err){
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
       console.log(err);
-      res.status(401).send({message: 'Not Authorized'});
+      res.status(401).send({ message: "Not Authorized" });
     }
 
-      console.log('value of token in decoded', decoded);
-      req.user = decoded;
-      next();
-  })
-}
+    console.log("value of token in decoded", decoded);
+    req.user = decoded;
+    next();
+  });
+};
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.wlof2pa.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -74,20 +73,38 @@ async function run() {
         .send({ success: true });
     });
 
-
     // clear token from cookie when user logged out
-    app.post('/logout', async(req, res)=>{
+    app.post("/logout", async (req, res) => {
       const user = req.body;
-      console.log('log out user', user);
-      res
-      .clearCookie('token', {maxAge: 0})
-      .send({success: true})
-    })
-
+      console.log("log out user", user);
+      res.clearCookie("token", { maxAge: 0 }).send({ success: true });
+    });
 
     // service related api
     app.get("/services", async (req, res) => {
-      const result = await serviceCollection.find().toArray();
+      const filter = req.query;
+      const query = {};
+      console.log(filter);
+      const options = {
+        sort: {
+          price: filter.sort === 'asc' ? 1 : -1,
+        }
+      };
+      const sortOrder = filter.sort === 'asc' ? 1 : -1;
+      const result = await serviceCollection.aggregate([
+        {
+          $addFields:{
+            // this field convert price value from string to number
+            priceAsNumber: { $toDouble: '$price'} 
+          }
+        },
+        {
+          $sort: {
+            // this field sorts among the converted numbers
+            priceAsNumber: sortOrder
+          }
+        }
+      ]).toArray();
       res.send(result);
     });
 
@@ -120,8 +137,8 @@ async function run() {
     app.get("/bookings", verifyToken, async (req, res) => {
       // console.log('user in the valid token', req.user);
 
-      if(req.query.email !== req.user.email){
-        return res.status(403).send({message: 'Forbidden Access'});
+      if (req.query.email !== req.user.email) {
+        return res.status(403).send({ message: "Forbidden Access" });
       }
 
       let query = {};
