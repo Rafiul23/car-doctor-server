@@ -81,9 +81,12 @@ async function run() {
     });
 
     // service related api
+    // get services by sorting
     app.get("/services", async (req, res) => {
       const filter = req.query;
-      const query = {};
+      const query = {
+
+      };
       console.log(filter);
       const options = {
         sort: {
@@ -99,6 +102,11 @@ async function run() {
           }
         },
         {
+          $match: {
+            priceAsNumber: {$gt: 50, $lt: 200}
+          }
+        },
+        {
           $sort: {
             // this field sorts among the converted numbers
             priceAsNumber: sortOrder
@@ -107,6 +115,7 @@ async function run() {
       ]).toArray();
       res.send(result);
     });
+
 
     app.get("/services/:id", async (req, res) => {
       const id = req.params.id;
